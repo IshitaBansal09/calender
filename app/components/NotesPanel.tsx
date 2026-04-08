@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef } from "react";
+import { useState, useRef, type ReactNode } from "react";
 import { Plus, StickyNote, CalendarDays, X } from "lucide-react";
 import { Note, DateRange, MonthTheme } from "../types/calendar";
 import { formatDateKey, MONTH_NAMES, MONTH_THEMES } from "../utils/calendar";
@@ -23,10 +23,11 @@ interface NotesPanelProps {
   onUpdateNote: (id: string, text: string) => void;
   onDeleteNote: (id: string) => void;
   rangeKey?: string;
+  isDark?: boolean;
 }
 
 export default function NotesPanel({
-  month, year, dateRange, notes, onAddNote, onUpdateNote, onDeleteNote, rangeKey
+  month, year, dateRange, notes, onAddNote, onUpdateNote, onDeleteNote, rangeKey, isDark
 }: NotesPanelProps) {
   const theme = MONTH_THEMES[month];
   const [newNoteText, setNewNoteText] = useState("");
@@ -47,11 +48,9 @@ export default function NotesPanel({
     return `${startStr} – ${endStr}`;
   })();
 
-  // Filter notes for current view
   const monthKey = `${year}-${String(month + 1).padStart(2, "0")}`;
   const monthNotes = notes.filter(n => !n.dateKey || n.dateKey.startsWith(monthKey));
 
-  // Range-specific notes
   const rangeNotes = (() => {
     if (!dateRange.start) return [];
     if (!dateRange.end) {
@@ -94,36 +93,47 @@ export default function NotesPanel({
   return (
     <div className="flex flex-col h-full overflow-hidden">
       {/* Header */}
-      <div className="flex items-center gap-2 mb-3 pb-3 border-b border-black/10">
-        <StickyNote className="w-4 h-4" style={{ color: theme.primary }} />
-        <h3 className="font-bold text-sm uppercase tracking-wider" style={{ color: theme.primary }}>
-          Notes — {MONTH_NAMES[month]}
+      <div className={`flex items-center gap-2 mb-3 pb-3 border-b ${isDark ? "border-white/10" : "border-black/8"}`}>
+        <StickyNote className="w-4 h-4 shrink-0" style={{ color: theme.primary }} />
+        <h3
+          className="font-playfair font-bold text-base tracking-tight"
+          style={{ color: theme.primary }}
+        >
+          Notes
+          <span className={`ml-1.5 font-inter text-xs font-normal tracking-wide ${isDark ? "text-gray-400" : "text-gray-400"}`}>
+            — {MONTH_NAMES[month]}
+          </span>
         </h3>
       </div>
 
       {/* Note input area */}
       <div
-        className="rounded-lg p-3 mb-3 border transition-all duration-200"
+        className="rounded-xl p-3 mb-3 border transition-all duration-200 shadow-sm"
         style={{
           backgroundColor: selectedColor,
-          borderColor: `${theme.primary}30`,
+          borderColor: `${theme.primary}25`,
         }}
       >
-        {/* Range attachment toggle */}
         {hasRange && (
           <div className="flex items-center gap-2 mb-2">
             <button
               onClick={() => setAttachToRange(!attachToRange)}
-              className={`flex items-center gap-1.5 text-xs px-2 py-1 rounded-full transition-all duration-200 ${
-                attachToRange ? "text-white shadow-sm" : "bg-black/10 text-gray-600"
+              className={`flex items-center gap-1.5 text-xs px-2.5 py-1 rounded-full transition-all duration-200 font-medium ${
+                attachToRange
+                  ? "text-white shadow-sm"
+                  : isDark
+                    ? "bg-white/10 text-gray-300"
+                    : "bg-black/10 text-gray-600"
               }`}
               style={attachToRange ? { backgroundColor: theme.primary } : {}}
             >
-              <CalendarDays className="w-3 h-3" />
+              <CalendarDays className="w-3 h-3 shrink-0" />
               {attachToRange ? `📌 ${rangeLabel}` : "General"}
             </button>
             {attachToRange && (
-              <span className="text-xs text-gray-500">Note pinned to selection</span>
+              <span className={`text-[11px] ${isDark ? "text-gray-400" : "text-gray-500"}`}>
+                Pinned to selection
+              </span>
             )}
           </div>
         )}
@@ -135,22 +145,28 @@ export default function NotesPanel({
           onKeyDown={e => {
             if (e.key === "Enter" && (e.ctrlKey || e.metaKey)) handleAdd();
           }}
-          placeholder="Add a note... (Ctrl+Enter to save)"
-          className="notes-textarea w-full bg-transparent text-sm text-gray-700 placeholder-gray-400 min-h-[72px] font-sans"
+          placeholder="Add a note… (Ctrl+Enter to save)"
+          className="notes-textarea w-full bg-transparent text-sm text-gray-700 placeholder-gray-400 min-h-[68px]"
           rows={3}
         />
 
         <div className="flex items-center justify-between mt-2">
-          {/* Color picker */}
           <div className="flex gap-1.5">
             {NOTE_COLORS.map(color => (
               <button
                 key={color}
                 onClick={() => setSelectedColor(color)}
                 className={`w-5 h-5 rounded-full border-2 transition-transform hover:scale-110 ${
-                  selectedColor === color ? "scale-110 border-gray-600" : "border-gray-300"
+                  selectedColor === color
+                    ? "scale-110 border-gray-500"
+                    : isDark
+                      ? "border-white/20"
+                      : "border-black/10"
                 }`}
-                style={{ backgroundColor: color }}
+                style={{
+                  backgroundColor: color,
+                  boxShadow: "0 1px 3px rgba(0,0,0,0.18)",
+                }}
               />
             ))}
           </div>
@@ -158,7 +174,7 @@ export default function NotesPanel({
           <button
             onClick={handleAdd}
             disabled={!newNoteText.trim()}
-            className="flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-full text-white font-medium transition-all duration-150 disabled:opacity-40 disabled:cursor-not-allowed hover:shadow-md active:scale-95"
+            className="flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-full text-white font-semibold transition-all duration-150 disabled:opacity-35 disabled:cursor-not-allowed hover:shadow-md active:scale-95"
             style={{ backgroundColor: theme.primary }}
           >
             <Plus className="w-3.5 h-3.5" />
@@ -168,86 +184,47 @@ export default function NotesPanel({
       </div>
 
       {/* Notes list */}
-      <div className="flex-1 overflow-y-auto space-y-2 pr-1">
-        {/* Range notes */}
+      <div className="flex-1 overflow-y-auto space-y-2 pr-0.5">
         {hasRange && rangeNotes.length > 0 && (
           <div>
-            <div className="flex items-center gap-1.5 mb-1.5">
-              <CalendarDays className="w-3 h-3" style={{ color: theme.primary }} />
-              <span className="text-xs font-semibold uppercase tracking-wider text-gray-500">
-                {rangeLabel}
-              </span>
-            </div>
+            <SectionLabel
+              icon={<CalendarDays className="w-3 h-3" style={{ color: theme.primary }} />}
+              label={rangeLabel ?? ""}
+              primaryColor={theme.primary}
+              isDark={isDark}
+            />
             {rangeNotes.map(note => (
-              <NoteCard
-                key={note.id}
-                note={note}
-                editingId={editingId}
-                editText={editText}
-                onEdit={startEdit}
-                onSave={saveEdit}
-                onDelete={onDeleteNote}
-                onEditTextChange={setEditText}
-                theme={theme}
-              />
+              <NoteCard key={note.id} note={note} editingId={editingId} editText={editText}
+                onEdit={startEdit} onSave={saveEdit} onDelete={onDeleteNote} onEditTextChange={setEditText} theme={theme} isDark={isDark} />
             ))}
           </div>
         )}
 
-        {/* General month notes */}
         {generalNotes.length > 0 && (
           <div>
-            <div className="flex items-center gap-1.5 mb-1.5">
-              <StickyNote className="w-3 h-3 text-gray-400" />
-              <span className="text-xs font-semibold uppercase tracking-wider text-gray-400">
-                General
-              </span>
-            </div>
+            <SectionLabel icon={<StickyNote className="w-3 h-3 opacity-50" />} label="General" muted isDark={isDark} />
             {generalNotes.map(note => (
-              <NoteCard
-                key={note.id}
-                note={note}
-                editingId={editingId}
-                editText={editText}
-                onEdit={startEdit}
-                onSave={saveEdit}
-                onDelete={onDeleteNote}
-                onEditTextChange={setEditText}
-                theme={theme}
-              />
+              <NoteCard key={note.id} note={note} editingId={editingId} editText={editText}
+                onEdit={startEdit} onSave={saveEdit} onDelete={onDeleteNote} onEditTextChange={setEditText} theme={theme} isDark={isDark} />
             ))}
           </div>
         )}
 
-        {/* Date-specific notes not in range */}
         {monthNotes.filter(n => n.dateKey && !rangeNotes.includes(n)).length > 0 && (
           <div>
-            <div className="flex items-center gap-1.5 mb-1.5">
-              <span className="text-xs font-semibold uppercase tracking-wider text-gray-400">
-                Other dates
-              </span>
-            </div>
+            <SectionLabel label="Other dates" muted isDark={isDark} />
             {monthNotes.filter(n => n.dateKey && !rangeNotes.includes(n)).map(note => (
-              <NoteCard
-                key={note.id}
-                note={note}
-                editingId={editingId}
-                editText={editText}
-                onEdit={startEdit}
-                onSave={saveEdit}
-                onDelete={onDeleteNote}
-                onEditTextChange={setEditText}
-                theme={theme}
-              />
+              <NoteCard key={note.id} note={note} editingId={editingId} editText={editText}
+                onEdit={startEdit} onSave={saveEdit} onDelete={onDeleteNote} onEditTextChange={setEditText} theme={theme} isDark={isDark} />
             ))}
           </div>
         )}
 
         {monthNotes.length === 0 && (
-          <div className="flex flex-col items-center justify-center py-8 text-gray-400">
-            <StickyNote className="w-8 h-8 mb-2 opacity-30" />
-            <p className="text-sm">No notes yet</p>
-            <p className="text-xs mt-1 opacity-70">Add a note above</p>
+          <div className={`flex flex-col items-center justify-center py-10 ${isDark ? "text-gray-500" : "text-gray-400"}`}>
+            <StickyNote className="w-9 h-9 mb-2.5 opacity-25" style={{ color: theme.primary }} />
+            <p className="text-sm font-medium">No notes yet</p>
+            <p className="text-xs mt-1 opacity-60">Add a note above</p>
           </div>
         )}
       </div>
@@ -255,8 +232,34 @@ export default function NotesPanel({
   );
 }
 
+function SectionLabel({
+  icon, label, muted, primaryColor, isDark
+}: {
+  icon?: ReactNode;
+  label: string;
+  muted?: boolean;
+  primaryColor?: string;
+  isDark?: boolean;
+}) {
+  return (
+    <div className="flex items-center gap-1.5 mb-1.5 mt-0.5">
+      {icon}
+      <span
+        className="text-[11px] font-semibold uppercase tracking-wider"
+        style={{
+          color: muted
+            ? isDark ? "#6b7280" : "#9ca3af"
+            : primaryColor ?? (isDark ? "#9ca3af" : "#6b7280"),
+        }}
+      >
+        {label}
+      </span>
+    </div>
+  );
+}
+
 function NoteCard({
-  note, editingId, editText, onEdit, onSave, onDelete, onEditTextChange, theme
+  note, editingId, editText, onEdit, onSave, onDelete, onEditTextChange, theme, isDark
 }: {
   note: Note;
   editingId: string | null;
@@ -266,13 +269,23 @@ function NoteCard({
   onDelete: (id: string) => void;
   onEditTextChange: (text: string) => void;
   theme: MonthTheme;
+  isDark?: boolean;
 }) {
   const isEditing = editingId === note.id;
 
+  // Note cards always have light pastel backgrounds — text is always dark
+  // but in dark mode we use a slightly more opaque border so the card reads against the panel
   return (
     <div
-      className="animate-fade-in group relative rounded-lg p-2.5 mb-1.5 border border-black/5 shadow-sm transition-all duration-150 hover:shadow-md"
-      style={{ backgroundColor: note.color }}
+      className="animate-fade-in group relative rounded-xl p-3 mb-1.5 shadow-sm transition-all duration-150 hover:shadow-md"
+      style={{
+        backgroundColor: note.color,
+        border: `1px solid ${isDark ? "rgba(0,0,0,0.12)" : "rgba(0,0,0,0.06)"}`,
+        // subtle inner highlight so card "pops" from the dark panel
+        boxShadow: isDark
+          ? "0 1px 3px rgba(0,0,0,0.3), inset 0 1px 0 rgba(255,255,255,0.5)"
+          : "0 1px 3px rgba(0,0,0,0.07)",
+      }}
     >
       {isEditing ? (
         <div>
@@ -284,13 +297,13 @@ function NoteCard({
               if (e.key === "Enter" && (e.ctrlKey || e.metaKey)) onSave();
               if (e.key === "Escape") onSave();
             }}
-            className="notes-textarea w-full bg-transparent text-sm text-gray-700 min-h-[60px] font-sans"
+            className="notes-textarea w-full bg-transparent text-sm text-gray-700 min-h-[56px]"
             rows={2}
           />
-          <div className="flex justify-end mt-1.5">
+          <div className="flex justify-end mt-2">
             <button
               onClick={onSave}
-              className="text-xs px-2 py-1 rounded text-white font-medium"
+              className="text-xs px-2.5 py-1 rounded-lg text-white font-semibold"
               style={{ backgroundColor: theme.primary }}
             >
               Save
@@ -299,27 +312,25 @@ function NoteCard({
         </div>
       ) : (
         <div
-          className="text-sm text-gray-700 cursor-text whitespace-pre-wrap break-words"
+          className="text-sm text-gray-700 cursor-text whitespace-pre-wrap break-words leading-relaxed"
           onClick={() => onEdit(note)}
         >
           {note.text}
         </div>
       )}
 
-      {/* Date badge */}
       {note.dateKey && (
-        <div className="mt-1.5 text-[10px] text-gray-400 flex items-center gap-1">
-          <CalendarDays className="w-2.5 h-2.5" />
+        <div className="mt-2 text-[10px] text-gray-400 flex items-center gap-1">
+          <CalendarDays className="w-2.5 h-2.5 shrink-0" />
           {new Date(note.dateKey + "T12:00:00").toLocaleDateString("en-US", {
             month: "short", day: "numeric", year: "numeric"
           })}
         </div>
       )}
 
-      {/* Delete button */}
       <button
         onClick={() => onDelete(note.id)}
-        className="absolute top-1.5 right-1.5 opacity-0 group-hover:opacity-100 transition-opacity p-1 rounded-full hover:bg-black/10"
+        className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity p-1 rounded-full hover:bg-black/10"
         title="Delete note"
       >
         <X className="w-3 h-3 text-gray-500" />

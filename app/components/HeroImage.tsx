@@ -19,8 +19,8 @@ export default function HeroImage({ month, year }: HeroImageProps) {
   }, [month]);
 
   return (
-    <div className="relative w-full h-full overflow-hidden rounded-t-lg md:rounded-l-lg md:rounded-tr-none">
-      {/* Background color while loading */}
+    <div className="relative w-full h-full overflow-hidden">
+      {/* Background placeholder */}
       <div
         className="absolute inset-0 transition-colors duration-700"
         style={{ backgroundColor: theme.bg }}
@@ -30,32 +30,42 @@ export default function HeroImage({ month, year }: HeroImageProps) {
       <img
         src={imgSrc}
         alt={`${MONTH_NAMES[month]} ${year}`}
-        className={`absolute inset-0 w-full h-full object-cover transition-opacity duration-700 ${loaded ? "opacity-100" : "opacity-0"}`}
+        className={`absolute inset-0 w-full h-full object-cover transition-opacity duration-700 ${
+          loaded ? "opacity-100" : "opacity-0"
+        }`}
         onLoad={() => setLoaded(true)}
         onError={() => setLoaded(false)}
       />
 
       {/* Gradient overlay */}
-      <div className="absolute inset-0 bg-gradient-to-b from-black/10 via-transparent to-black/60" />
+      <div className="absolute inset-0 bg-gradient-to-b from-black/5 via-black/10 to-black/65" />
 
       {/* Season badge */}
       <div
-        className="absolute top-4 left-4 px-3 py-1 rounded-full text-xs font-semibold uppercase tracking-widest text-white backdrop-blur-sm"
+        className="absolute top-4 left-4 px-3 py-1 rounded-full text-xs font-semibold uppercase tracking-widest text-white backdrop-blur-sm shadow-sm"
         style={{ backgroundColor: `${theme.primary}cc` }}
       >
         {theme.season}
       </div>
 
-      {/* Month label overlay */}
-      <div className="absolute bottom-0 left-0 right-0 p-5 text-white">
-        <div className="text-4xl md:text-5xl font-bold tracking-tight drop-shadow-lg">
+      {/* Month & year overlay */}
+      <div className="absolute bottom-0 left-0 right-0 px-6 pb-5 pt-12 text-white"
+        style={{
+          background: "linear-gradient(to top, rgba(0,0,0,0.6) 0%, transparent 100%)"
+        }}
+      >
+        <div
+          className="font-playfair text-5xl md:text-6xl font-bold tracking-tight drop-shadow-lg leading-none"
+        >
           {MONTH_NAMES[month]}
         </div>
-        <div className="text-lg opacity-80 drop-shadow font-light">{year}</div>
+        <div className="text-sm mt-1.5 opacity-75 drop-shadow font-light tracking-widest uppercase">
+          {year}
+        </div>
       </div>
 
       {/* Decorative corner dots */}
-      <div className="absolute top-3 right-3 grid grid-cols-3 gap-1 opacity-30">
+      <div className="absolute top-4 right-4 grid grid-cols-3 gap-1 opacity-25">
         {Array.from({ length: 9 }).map((_, i) => (
           <div key={i} className="w-1 h-1 rounded-full bg-white" />
         ))}
